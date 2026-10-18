@@ -38,8 +38,8 @@ def _annotate_varieties(qs):
     in_agg = Inward.objects.values('variety_id').annotate(s=Sum('bags')).values('variety_id', 's')
     out_agg = Outward.objects.values('variety_id').annotate(s=Sum('bags')).values('variety_id', 's')
 
-    # Mother India Mill outward (from_place is null)
-    mill_out_agg = Outward.objects.filter(from_place__isnull=True).values('variety_id').annotate(s=Sum('bags')).values('variety_id', 's')
+    # External outward sales (non-transfer outward entries)
+    sales_out_agg = Outward.objects.filter(is_transfer=False).values('variety_id').annotate(s=Sum('bags')).values('variety_id', 's')
 
     # Inter-branch transfers received at other places
     transfers_in_agg = Outward.objects.filter(is_transfer=True, to_place__isnull=False).values(
@@ -54,7 +54,7 @@ def _annotate_varieties(qs):
     # Build lookup dicts (single query each)
     in_map = {item['variety_id']: (item['s'] or 0) for item in in_agg}
     out_map = {item['variety_id']: (item['s'] or 0) for item in out_agg}
-    mill_out_map = {item['variety_id']: (item['s'] or 0) for item in mill_out_agg}
+    sales_out_map = {item['variety_id']: (item['s'] or 0) for item in sales_out_agg}
 
     # Build place breakdown per variety
     place_breakdown_map = {}
@@ -86,21 +86,29 @@ def _annotate_varieties(qs):
     # Annotate in-memory (no N+1, no subqueries)
     for v in qs:
         in_b = in_map.get(v.id, 0)
-        mill_out_b = mill_out_map.get(v.id, 0)
-        our_mill_b = in_b - mill_out_b
+        out_b = out_map.get(v.id, 0)
+        sales_b = sales_out_map.get(v.id, 0)
 
+        # 1. Stock currently at other branch places
         v_places = place_breakdown_map.get(v.id, {})
         valid_places_list = [p for p in v_places.values() if p['bags'] > 0]
         other_places_b = sum(p['bags'] for p in valid_places_list)
 
+        # 2. Total stock across business = Total Inward minus External Outward Sales
+        total_b = max(0, in_b - sales_b)
+
+        # 3. Stock physically at Our Mill (Mother India) = Total Stock minus Other Places Stock
+        our_mill_b = max(0, total_b - other_places_b)
+
+        # Ensure total_b is consistent: our_mill_b + other_places_b
         total_b = our_mill_b + other_places_b
 
         v._in_bags = in_b
-        v._out_bags = out_map.get(v.id, 0)
+        v._out_bags = out_b
+        v._total_stock_bags = total_b
         v._our_mill_bags = our_mill_b
         v._other_places_bags = other_places_b
         v._other_places_breakdown = valid_places_list
-        v._total_stock_bags = total_b
         v._inward_count = in_count_map.get(v.id, 0)
         v._outward_count = out_count_map.get(v.id, 0)
 

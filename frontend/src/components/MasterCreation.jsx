@@ -124,6 +124,9 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
   useEffect(() => {
     if (activeSection) {
       setCurrentMasterTab(activeSection);
+      if (activeSection === 'variety') {
+        loadVarieties(true);
+      }
     }
   }, [activeSection]);
 
@@ -132,7 +135,7 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
     loadPlaces();
     loadFloors();
     loadParties();
-    loadVarieties();
+    loadVarieties(true);
     loadFloorStock();
   };
 
@@ -140,7 +143,7 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
   const loadPlaces = () => getPlaces().then(res => setPlaces(res.results || res.data || res)).catch(console.error);
   const loadFloors = () => getFloors().then(res => setFloors(res.results || res.data || res)).catch(console.error);
   const loadParties = () => getParties().then(res => setParties(res.results || res.data || res)).catch(console.error);
-  const loadVarieties = () => getVarieties().then(res => setVarieties(res.results || res.data || res)).catch(console.error);
+  const loadVarieties = (fresh = true) => getVarieties(fresh).then(res => setVarieties(res.results || res.data || res)).catch(console.error);
   const loadFloorStock = () => getFloorStock().then(res => setFloorStockReport(res)).catch(console.error);
 
   // --- Reset forms ---
@@ -608,7 +611,7 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
 
         <button 
           className={`master-tab-btn ${currentMasterTab === 'variety' ? 'active' : ''}`} 
-          onClick={() => { setCurrentMasterTab('variety'); setSearchTerm(''); }}
+          onClick={() => { setCurrentMasterTab('variety'); setSearchTerm(''); loadVarieties(true); }}
         >
           <i className="fas fa-wheat-awn" style={{ color: currentMasterTab === 'variety' ? '#10b981' : '#64748b' }}></i>
           <span>Variety Master</span>
@@ -709,6 +712,14 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
               <i className="fas fa-wheat-awn" style={{ color: '#10b981' }}></i> Variety Master ({filteredVarieties.length})
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => loadVarieties(true)}
+                title="Refresh Live Stock"
+                style={{ border: '1px solid #cbd5e1', color: '#0f172a' }}
+              >
+                <i className="fas fa-arrows-rotate"></i> Refresh Stock
+              </button>
               <button 
                 className="btn btn-ghost" 
                 onClick={downloadVarietyMasterPdf}
