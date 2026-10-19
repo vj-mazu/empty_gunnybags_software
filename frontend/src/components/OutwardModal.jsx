@@ -138,11 +138,11 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
       return;
     }
     if (isTransfer && !toPlaceId) {
-      setError('Please select a destination place / branch for the transfer');
+      setError('Please select a Mill Transfer Location for the transfer');
       return;
     }
     if (!isTransfer && stockOriginType === 'branch' && !fromPlaceId) {
-      setError('Please select which branch location to sell from');
+      setError('Please select which outside mill location to sell from');
       return;
     }
 
@@ -252,7 +252,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
         }
       } else {
         await createOutward(payload);
-        if (showToast) showToast(isTransfer ? 'Transfer outward entry created!' : 'Outward sale recorded successfully!');
+        if (showToast) showToast(isTransfer ? 'Mill Transfer outward entry created!' : 'Outward sale recorded successfully!');
       }
       if (onSaved) onSaved();
       onClose();
@@ -619,7 +619,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
                   <span className="toggle-slider"></span>
                 </label>
                 <span style={{ fontWeight: 700, color: isTransfer ? '#2563eb' : '#334155' }}>
-                  <i className="fas fa-truck-moving" style={{ marginRight: '4px' }}></i> Inter-Branch Transfer
+                  <i className="fas fa-truck-moving" style={{ marginRight: '4px' }}></i> Mill Transfer (To Outside Mill)
                 </span>
               </div>
 
@@ -632,11 +632,11 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
               </div>
             </div>
 
-            {/* If Inter-Branch Transfer: From & To Places */}
+            {/* If Mill Transfer: From & To Places */}
             {isTransfer ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '0.85rem', background: '#eff6ff', padding: '0.85rem', borderRadius: '8px', border: '1px solid #bfdbfe', marginBottom: lfOn ? '0.85rem' : 0 }}>
                 <div className="form-group">
-                  <label style={{ color: '#1e40af', fontWeight: 700 }}>From Location</label>
+                  <label style={{ color: '#1e40af', fontWeight: 700 }}>From Mill</label>
                   <input 
                     type="text" 
                     className="input" 
@@ -646,14 +646,19 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
                   />
                 </div>
                 <div className="form-group">
-                  <label style={{ color: '#1e40af', fontWeight: 700 }}>To Branch / Place</label>
+                  <label style={{ color: '#1e40af', fontWeight: 700 }}>
+                    <i className="fas fa-industry" style={{ marginRight: '4px' }}></i> Mill Transfer Location (Outside Mill)
+                  </label>
                   <SearchableSelect 
                     options={places}
                     value={toPlaceId}
                     onChange={setToPlaceId}
-                    placeholder="Search & Select Destination..."
+                    placeholder="Search & Select Mill Transfer Location..."
                     required={isTransfer}
                   />
+                  <div style={{ fontSize: '0.72rem', color: '#1e40af', marginTop: '3px', fontWeight: 600 }}>
+                    <i className="fas fa-info-circle"></i> Stock transferred here will show under "Other Mills' Stock".
+                  </div>
                 </div>
                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
                   {renderFloorAllocationSection()}
@@ -663,7 +668,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
               /* If Direct Sale / Location Sale: Radio Button for Stock Source */
               <div style={{ background: '#f1f5f9', padding: '0.75rem 0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: lfOn ? '0.85rem' : 0 }}>
                 <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>
-                  <i className="fas fa-location-dot" style={{ color: '#2563eb', marginRight: '4px' }}></i> Stock Origin / Sold From
+                  <i className="fas fa-location-dot" style={{ color: '#2563eb', marginRight: '4px' }}></i> Outward Stock Origin / Sold From
                 </label>
                 <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: stockOriginType === 'branch' ? '0.65rem' : 0 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.86rem', fontWeight: 600, color: stockOriginType === 'mill' ? '#2563eb' : '#475569' }}>
@@ -689,7 +694,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
                         setStockOriginType('branch');
                       }} 
                     />
-                    <span>From Branch / Place Stock</span>
+                    <span>Sold From Outside Mill Stock</span>
                   </label>
                 </div>
 
@@ -706,7 +711,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
                         setFromPlaceId(pId);
                         setFromPlaceName(pName);
                       }}
-                      placeholder="Search & Select Branch Place..."
+                      placeholder="Search & Select Outside Mill Location..."
                       required={stockOriginType === 'branch'}
                     />
                   </div>

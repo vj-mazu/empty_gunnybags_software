@@ -43,20 +43,20 @@ const PlaceStockLedger = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <i className="fas fa-map-location-dot" style={{ color: '#2563eb' }}></i> Inter-Branch Place Stock Ledger
+              <i className="fas fa-industry" style={{ color: '#2563eb' }}></i> Mill Transfer Stock Ledger
             </h2>
             <p style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.15rem' }}>
-              Track stock transfers received from Mother India vs branch sales and live remaining inventory per location.
+              Track stock transfers received from Mother India vs outside mill sales and live remaining inventory per mill location.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '260px' }}>
             <div style={{ width: '220px' }}>
               <SearchableSelect 
-                options={[{ id: '', name: 'All Places / Branches' }, ...places]}
+                options={[{ id: '', name: 'All Mill Transfer Locations' }, ...places]}
                 value={selectedPlaceId}
                 onChange={setSelectedPlaceId}
-                placeholder="All Places / Branches"
+                placeholder="All Mill Transfer Locations"
               />
             </div>
             <button className="btn btn-ghost" onClick={() => fetchLedger(selectedPlaceId)}>

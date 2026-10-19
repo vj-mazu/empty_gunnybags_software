@@ -631,8 +631,8 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
           className={`master-tab-btn ${currentMasterTab === 'place' ? 'active' : ''}`} 
           onClick={() => { setCurrentMasterTab('place'); setSearchTerm(''); }}
         >
-          <i className="fas fa-warehouse" style={{ color: currentMasterTab === 'place' ? '#f59e0b' : '#64748b' }}></i>
-          <span>Place / Branch</span>
+          <i className="fas fa-industry" style={{ color: currentMasterTab === 'place' ? '#f59e0b' : '#64748b' }}></i>
+          <span>Mill Transfer Locations</span>
           <span className="tab-badge">{places.length}</span>
         </button>
 
@@ -1183,15 +1183,15 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
         </div>
       )}
 
-      {/* TAB 3: PLACE MASTER */}
+      {/* TAB 3: MILL TRANSFER LOCATIONS MASTER */}
       {currentMasterTab === 'place' && (
         <div className="card">
           <div className="card-hdr">
             <div className="card-title">
-              <i className="fas fa-warehouse" style={{ color: '#f59e0b' }}></i> Place / Branch Master ({filteredPlaces.length})
+              <i className="fas fa-industry" style={{ color: '#f59e0b' }}></i> Mill Transfer Locations Master ({filteredPlaces.length})
             </div>
             <button className="btn btn-blue" onClick={() => setShowPlaceModal(true)}>
-              <i className="fas fa-plus"></i> Add New Place
+              <i className="fas fa-plus"></i> Add New Mill Location
             </button>
           </div>
           <div className="tbl-wrap">
@@ -1199,7 +1199,7 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
               <thead>
                 <tr>
                   <th style={{ width: '8%', textAlign: 'center' }}>SL</th>
-                  <th style={{ width: '72%' }}>Place / Branch Location Name</th>
+                  <th style={{ width: '72%' }}>Mill Transfer Location Name (Outside Mill)</th>
                   <th style={{ width: '20%', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
