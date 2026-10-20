@@ -100,9 +100,9 @@ class VarietySerializer(serializers.ModelSerializer):
     def get_our_mill_stock_bags(self, obj):
         if hasattr(obj, '_our_mill_bags'):
             return obj._our_mill_bags or 0
-        tot = self.get_current_stock_bags(obj)
-        other = self.get_other_places_stock_bags(obj)
-        return max(0, tot - other)
+        in_b = Inward.objects.filter(variety=obj).aggregate(Sum('bags'))['bags__sum'] or 0
+        our_out_b = Outward.objects.filter(variety=obj, from_place__isnull=True).aggregate(Sum('bags'))['bags__sum'] or 0
+        return max(0, in_b - our_out_b)
 
     def get_our_mill_stock_kgs(self, obj):
         return float(self.get_our_mill_stock_bags(obj)) * float(obj.kgs_per_bag)
@@ -136,10 +136,8 @@ class VarietySerializer(serializers.ModelSerializer):
         # Use prefetched annotation if available (set by view), otherwise fallback
         if hasattr(obj, '_total_stock_bags'):
             return obj._total_stock_bags or 0
-        in_b = Inward.objects.filter(variety=obj).aggregate(Sum('bags'))['bags__sum'] or 0
-        sales_b = Outward.objects.filter(variety=obj, is_transfer=False).aggregate(Sum('bags'))['bags__sum'] or 0
+        our_mill = self.get_our_mill_stock_bags(obj)
         other = self.get_other_places_stock_bags(obj)
-        our_mill = max(0, (in_b - sales_b) - other)
         return our_mill + other
 
     def get_current_stock_kgs(self, obj):
