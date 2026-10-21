@@ -165,7 +165,8 @@ export const deleteParty = (id) => { invalidateCache('parties'); invalidateCache
 
 export const getVarieties = (fresh = false) => {
   if (fresh) invalidateCache('varieties');
-  return cachedFetch('varieties', () => api('/varieties/'), fresh ? 0 : 30000);
+  const path = fresh ? `/varieties/?_t=${Date.now()}` : '/varieties/';
+  return cachedFetch('varieties', () => api(path, { headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } }), fresh ? 0 : 30000);
 };
 export const createVariety = (formData) => { invalidateCache('varieties'); invalidateCache('stocks-today'); invalidateCache('dashboard'); invalidateCache('empty-bags-ledger'); invalidateCache('floor-stock'); return api('/varieties/', { method: 'POST', body: formData }); };
 export const updateVariety = (id, formData) => { invalidateCache('varieties'); invalidateCache('stocks-today'); invalidateCache('dashboard'); invalidateCache('empty-bags-ledger'); invalidateCache('floor-stock'); return api(`/varieties/${id}/`, { method: 'PATCH', body: formData }); };

@@ -11,6 +11,9 @@ from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import UserProfile, Place, Floor, Party, Variety, Inward, Outward, DailyStockSummary, Role
 from .serializers import (
@@ -109,6 +112,15 @@ def _annotate_varieties(qs):
         v._other_places_breakdown = valid_places_list
         v._inward_count = in_count_map.get(v.id, 0)
         v._outward_count = out_count_map.get(v.id, 0)
+
+        # Explicit server-side debug log for variety stock calculations
+        print(
+            f"[VARIETY_STOCK_DEBUG] ID={v.id} Name='{v.name}' | "
+            f"Inward={in_b} | MotherIndiaOutward={our_mill_out_b} | "
+            f"OurMillStock={our_mill_b} | OtherPlacesStock={other_places_b} | "
+            f"TotalStock={total_b}",
+            flush=True
+        )
 
     return qs
 

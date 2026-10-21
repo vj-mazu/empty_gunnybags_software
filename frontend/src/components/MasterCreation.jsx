@@ -143,7 +143,16 @@ const MasterCreation = ({ user, activeSection, showToast }) => {
   const loadPlaces = () => getPlaces().then(res => setPlaces(res.results || res.data || res)).catch(console.error);
   const loadFloors = () => getFloors().then(res => setFloors(res.results || res.data || res)).catch(console.error);
   const loadParties = () => getParties().then(res => setParties(res.results || res.data || res)).catch(console.error);
-  const loadVarieties = (fresh = true) => getVarieties(fresh).then(res => setVarieties(res.results || res.data || res)).catch(console.error);
+  const loadVarieties = (fresh = true) => getVarieties(fresh).then(res => {
+    const list = res.results || res.data || res;
+    console.log("[Variety Master DEBUG] Varieties loaded from API:", list);
+    if (Array.isArray(list)) {
+      list.forEach(v => {
+        console.log(`[Variety Master DEBUG] #${v.id} ${v.name}: OurMill=${v.our_mill_stock_bags}, OtherMills=${v.other_places_stock_bags}, Total=${v.current_stock_bags}`, v.debug_calc);
+      });
+    }
+    setVarieties(list);
+  }).catch(console.error);
   const loadFloorStock = () => getFloorStock().then(res => setFloorStockReport(res)).catch(console.error);
 
   // --- Reset forms ---

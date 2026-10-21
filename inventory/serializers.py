@@ -75,6 +75,7 @@ class VarietySerializer(serializers.ModelSerializer):
     other_places_breakdown = serializers.SerializerMethodField()
     can_delete = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
+    debug_calc = serializers.SerializerMethodField()
 
     class Meta:
         model = Variety
@@ -84,7 +85,7 @@ class VarietySerializer(serializers.ModelSerializer):
             'created_at', 'current_stock_bags', 'current_stock_kgs',
             'our_mill_stock_bags', 'our_mill_stock_kgs',
             'other_places_stock_bags', 'other_places_stock_kgs',
-            'other_places_breakdown', 'can_delete'
+            'other_places_breakdown', 'can_delete', 'debug_calc'
         ]
 
     def get_photo_url(self, obj):
@@ -148,6 +149,17 @@ class VarietySerializer(serializers.ModelSerializer):
         if hasattr(obj, '_inward_count') and hasattr(obj, '_outward_count'):
             return (obj._inward_count + obj._outward_count) == 0
         return (obj.inwards.count() + obj.outwards.count()) == 0
+
+    def get_debug_calc(self, obj):
+        return {
+            'variety_id': obj.id,
+            'variety_name': obj.name,
+            'total_inward_bags': getattr(obj, '_in_bags', None),
+            'total_outward_bags': getattr(obj, '_out_bags', None),
+            'our_mill_stock_bags': getattr(obj, '_our_mill_bags', self.get_our_mill_stock_bags(obj)),
+            'other_places_stock_bags': getattr(obj, '_other_places_bags', self.get_other_places_stock_bags(obj)),
+            'total_stock_bags': getattr(obj, '_total_stock_bags', self.get_current_stock_bags(obj)),
+        }
 
 
 class InwardSerializer(serializers.ModelSerializer):
