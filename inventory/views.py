@@ -98,10 +98,13 @@ def _annotate_varieties(qs):
         valid_places_list = [p for p in v_places.values() if p['bags'] > 0]
         other_places_b = sum(p['bags'] for p in valid_places_list)
 
-        # 2. Stock physically at Our Mill (Mother India) = Total Inward minus all Outwards from Our Mill
-        our_mill_b = max(0, in_b - our_mill_out_b)
+        # 2. Total stock across business = Total Inward minus Total Outward (matches Empty Bags Ledger 100%)
+        total_b = max(0, in_b - out_b)
 
-        # 3. Total stock across business = Our Mill stock + Other Places stock
+        # 3. Stock physically at Our Mill (Mother India) = Total Stock minus Other Places Stock
+        our_mill_b = max(0, total_b - other_places_b)
+
+        # Ensure total_b is consistent: our_mill_b + other_places_b
         total_b = our_mill_b + other_places_b
 
         v._in_bags = in_b
