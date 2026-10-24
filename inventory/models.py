@@ -113,13 +113,14 @@ class Inward(models.Model):
                 self.sl_no = (last or 0) + 1
         
         self.total_kgs = Decimal(str(self.bags)) * Decimal(str(self.variety.kgs_per_bag))
-        base_val = Decimal(str(self.bags)) * Decimal(str(self.rate))
+        base_rate = Decimal(str(self.rate or '0.00'))
+        base_val = Decimal(str(self.bags)) * base_rate
         if self.lf_toggle:
-            self.total_value = base_val + Decimal(str(self.lf_amount))
+            self.total_value = base_val + Decimal(str(self.lf_amount or '0.00'))
         else:
             self.total_value = base_val
 
-        if self.bags > 0:
+        if self.bags > 0 and self.total_value > 0:
             self.per_bag_cost = self.total_value / Decimal(str(self.bags))
         else:
             self.per_bag_cost = Decimal('0.00')
@@ -133,11 +134,11 @@ class Outward(models.Model):
     sl_no = models.IntegerField(unique=True, editable=False)
     invoice_no = models.CharField(max_length=50, unique=True)
     date = models.DateField(default=timezone.now)
-    party = models.ForeignKey(Party, on_delete=models.PROTECT, related_name='outwards')
+    party = models.ForeignKey(Party, on_delete=models.SET_NULL, null=True, blank=True, related_name='outwards')
     variety = models.ForeignKey(Variety, on_delete=models.PROTECT, related_name='outwards')
     floor = models.ForeignKey(Floor, on_delete=models.SET_NULL, null=True, blank=True, related_name='outwards')
     floor_allocations = models.JSONField(default=list, blank=True, null=True, help_text="Multi-floor allocation list")
-    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), blank=True)
     bags = models.PositiveIntegerField()
     total_kgs = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), editable=False)
     lf_toggle = models.BooleanField(default=False, verbose_name="LF Toggle (Yes/No)")
@@ -146,6 +147,7 @@ class Outward(models.Model):
     from_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_outwards')
     from_place_name = models.CharField(max_length=150, blank=True, null=True, help_text="Origin place name (manual entry)")
     to_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True, related_name='transfer_outwards')
+    remarks = models.CharField(max_length=255, blank=True, null=True, default='', help_text="Transfer notes / vehicle number / remarks")
     total_value = models.DecimalField(max_digits=14, decimal_places=2, editable=False)
     per_bag_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'), editable=False, help_text="Auto-calculated actual cost per bag")
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='outward_entries')
@@ -170,13 +172,14 @@ class Outward(models.Model):
                 self.sl_no = (last or 0) + 1
 
         self.total_kgs = Decimal(str(self.bags)) * Decimal(str(self.variety.kgs_per_bag))
-        base_val = Decimal(str(self.bags)) * Decimal(str(self.rate))
+        base_rate = Decimal(str(self.rate or '0.00'))
+        base_val = Decimal(str(self.bags)) * base_rate
         if self.lf_toggle:
-            self.total_value = base_val + Decimal(str(self.lf_amount))
+            self.total_value = base_val + Decimal(str(self.lf_amount or '0.00'))
         else:
             self.total_value = base_val
 
-        if self.bags > 0:
+        if self.bags > 0 and self.total_value > 0:
             self.per_bag_cost = self.total_value / Decimal(str(self.bags))
         else:
             self.per_bag_cost = Decimal('0.00')

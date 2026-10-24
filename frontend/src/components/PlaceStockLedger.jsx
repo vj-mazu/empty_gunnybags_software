@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { getPlaces, getPlaceLedger } from '../api';
 import { formatDate, formatBags } from '../utils/formatters';
 import SearchableSelect from './SearchableSelect';
+import MillTransferModal from './MillTransferModal';
 
-const PlaceStockLedger = () => {
+const PlaceStockLedger = ({ user = null, showToast = null }) => {
   const [places, setPlaces] = useState([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState('');
   const [showZeroBalance, setShowZeroBalance] = useState(false);
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   useEffect(() => {
     getPlaces().then(res => setPlaces(res.results || res.data || res)).catch(console.error);
@@ -87,6 +89,14 @@ const PlaceStockLedger = () => {
 
             <button className="btn btn-ghost" onClick={() => fetchLedger(selectedPlaceId)}>
               <i className="fas fa-sync-alt"></i> Refresh
+            </button>
+
+            <button 
+              className="btn btn-blue" 
+              onClick={() => setShowTransferModal(true)}
+              style={{ background: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+            >
+              <i className="fas fa-industry"></i> ⇄ New Mill Transfer
             </button>
           </div>
         </div>
@@ -227,6 +237,16 @@ const PlaceStockLedger = () => {
           </div>
         ));
       })()}
+
+      {showTransferModal && (
+        <MillTransferModal 
+          isOpen={showTransferModal}
+          onClose={() => setShowTransferModal(false)}
+          onSaved={() => fetchLedger(selectedPlaceId)}
+          user={user}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 };

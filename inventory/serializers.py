@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from decimal import Decimal
 from .models import UserProfile, Place, Floor, Party, Variety, Inward, Outward, DailyStockSummary, Role, calculate_floor_stock
 from django.db.models import Sum, Count, Q
 
@@ -203,15 +204,41 @@ class OutwardSerializer(serializers.ModelSerializer):
             'id', 'sl_no', 'invoice_no', 'date', 'party', 'party_name', 
             'variety', 'variety_name', 'floor', 'floor_name', 'floor_allocations', 'kgs_per_bag', 'rate', 'bags', 
             'total_kgs', 'lf_toggle', 'lf_amount', 'is_transfer', 
-            'from_place', 'from_place_name', 'to_place', 'to_place_name', 'total_value', 
+            'from_place', 'from_place_name', 'to_place', 'to_place_name', 'remarks', 'total_value', 
             'per_bag_cost', 'created_by', 'created_by_name', 'created_at'
         ]
+        extra_kwargs = {
+            'party': {'required': False, 'allow_null': True},
+            'rate': {'required': False, 'default': Decimal('0.00')},
+            'remarks': {'required': False, 'allow_blank': True, 'allow_null': True},
+        }
 
     def validate(self, data):
         variety = data.get('variety')
         requested_bags = data.get('bags', 0)
         from_place = data.get('from_place')
         is_transfer = data.get('is_transfer', False)
+
+        if is_transfer:
+            to_place = data.get('to_place')
+            if not to_place:
+                raise serializers.ValidationError({
+                    "to_place": "Destination Mill (To Place) is required for mill transfers."
+                })
+            if not data.get('party') and to_place:
+                party_obj, _ = Party.objects.get_or_create(name=to_place.name)
+                data['party'] = party_obj
+            if not data.get('rate'):
+                data['rate'] = Decimal('0.00')
+        else:
+            if not data.get('party'):
+                raise serializers.ValidationError({
+                    "party": "Party is required for outward customer sales."
+                })
+            if data.get('rate') is None:
+                raise serializers.ValidationError({
+                    "rate": "Rate is required for outward customer sales."
+                })
 
         # 1. Total Mill-Wide Stock Validation
         in_bags = Inward.objects.filter(variety=variety).aggregate(Sum('bags'))['bags__sum'] or 0

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getStocksToday, downloadPdf, downloadStocksPdf, deleteInward, deleteOutward, createApprovalRequest, invalidateCache } from '../api';
 import InwardModal from './InwardModal';
 import OutwardModal from './OutwardModal';
+import MillTransferModal from './MillTransferModal';
 import CustomConfirmModal from './CustomConfirmModal';
 import { formatDate, formatINR, formatBags } from '../utils/formatters';
 
@@ -64,6 +65,7 @@ const Stocks = ({ user, showToast }) => {
 
   const [showInwardModal, setShowInwardModal] = useState(false);
   const [showOutwardModal, setShowOutwardModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   const [businessDate, setBusinessDate] = useState('');
   const [openingStock, setOpeningStock] = useState(0);
@@ -75,6 +77,7 @@ const Stocks = ({ user, showToast }) => {
 
   const [editingInward, setEditingInward] = useState(null);
   const [editingOutward, setEditingOutward] = useState(null);
+  const [editingTransfer, setEditingTransfer] = useState(null);
   const [pendingMap, setPendingMap] = useState({});
 
   // Custom confirmation modal state
@@ -305,7 +308,7 @@ const Stocks = ({ user, showToast }) => {
           </button>
           <button 
             className="btn" 
-            onClick={() => { setEditingOutward({ is_transfer: true }); setShowOutwardModal(true); }}
+            onClick={() => { setEditingTransfer(null); setShowTransferModal(true); }}
             style={{ background: '#2563eb', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
             title="Transfer bags to an outside mill"
           >
@@ -427,18 +430,32 @@ const Stocks = ({ user, showToast }) => {
             <div className="tbl-wrap">
               <table style={{ fontSize: isSplit ? '0.72rem' : '0.8rem', width: '100%' }}>
                 <thead>
-                  <tr>
-                    <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '24px' : '35px', padding: isSplit ? '4px 2px' : '6px 8px' }}>SL</th>
-                    <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Invoice</th>
-                    <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>{viewMode === 'transfers' ? 'Destination Mill' : (isSplit ? 'Party' : 'Customer / Party')}</th>
-                    <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Variety</th>
-                    <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 3px' : '6px 8px' }}>Bags</th>
-                    <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 3px' : '6px 8px' }}>Rate</th>
-                    <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 2px' : '6px 8px' }}>LF</th>
-                    <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 4px' : '6px 8px' }}>Value</th>
-                    <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 3px' : '6px 8px' }}>P/B</th>
-                    <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '75px' : '100px', padding: isSplit ? '4px 2px' : '6px 8px' }}>Actions</th>
-                  </tr>
+                  {viewMode === 'transfers' ? (
+                    <tr>
+                      <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '24px' : '35px', padding: isSplit ? '4px 2px' : '6px 8px' }}>SL</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Transfer No</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Date</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>From Mill</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>To Mill</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Variety</th>
+                      <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 3px' : '6px 8px' }}>Bags</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Remarks</th>
+                      <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '75px' : '100px', padding: isSplit ? '4px 2px' : '6px 8px' }}>Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '24px' : '35px', padding: isSplit ? '4px 2px' : '6px 8px' }}>SL</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Invoice</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>{isSplit ? 'Party' : 'Customer / Party'}</th>
+                      <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Variety</th>
+                      <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 3px' : '6px 8px' }}>Bags</th>
+                      <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 3px' : '6px 8px' }}>Rate</th>
+                      <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 2px' : '6px 8px' }}>LF</th>
+                      <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 4px' : '6px 8px' }}>Value</th>
+                      <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 3px' : '6px 8px' }}>P/B</th>
+                      <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '75px' : '100px', padding: isSplit ? '4px 2px' : '6px 8px' }}>Actions</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody>
                   {Array.isArray(displayedOutwards) && displayedOutwards.map((item, index) => {
@@ -447,6 +464,61 @@ const Stocks = ({ user, showToast }) => {
                       ? (isPending.action_type === 'DELETE' ? '#fee2e2' : '#fef08a') 
                       : undefined;
                     const badgeBg = isPending?.action_type === 'DELETE' ? '#dc2626' : '#d97706';
+
+                    if (viewMode === 'transfers') {
+                      return (
+                        <tr key={item.id} style={{ backgroundColor: rowBg }}>
+                          <td style={{ fontWeight: 600, textAlign: 'center', color: '#64748b', padding: isSplit ? '4px 2px' : '6px 8px' }}>{index + 1}</td>
+                          <td style={{ fontWeight: 700, color: '#2563eb', padding: isSplit ? '4px 4px' : '6px 8px' }}>
+                            <span 
+                              onClick={() => handleDownloadPdf('outward', item.id)}
+                              style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                              title="Click to view full-screen printable invoice"
+                            >
+                              {item.invoice_no}
+                            </span>
+                            {isPending && (
+                              <span style={{ fontSize: '0.6rem', background: badgeBg, color: '#fff', padding: '1px 3px', borderRadius: '3px', fontWeight: 800, marginLeft: '4px' }}>
+                                PENDING
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', color: '#475569' }}>
+                            {formatDate(item.date)}
+                          </td>
+                          <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', fontWeight: 600, color: '#047857' }}>
+                            <i className="fas fa-warehouse" style={{ marginRight: '4px' }}></i>
+                            {item.from_place_name || 'Mother India'}
+                          </td>
+                          <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', fontWeight: 700, color: '#1d4ed8' }}>
+                            <i className="fas fa-truck-moving" style={{ marginRight: '4px' }}></i>
+                            {item.to_place_name || 'Outside Mill'}
+                          </td>
+                          <td className="wrap-text" style={{ padding: isSplit ? '4px 4px' : '6px 8px', maxWidth: isSplit ? '95px' : '160px' }}>
+                            {item.kgs_per_bag ? `${item.variety_name} (${Number(item.kgs_per_bag).toFixed(0)}k)` : item.variety_name}
+                          </td>
+                          <td style={{ fontWeight: 800, textAlign: 'center', color: '#2563eb', padding: isSplit ? '4px 3px' : '6px 8px' }}>
+                            {formatBags(item.bags)}
+                          </td>
+                          <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', color: '#64748b', fontSize: '0.75rem' }}>
+                            {item.remarks || '-'}
+                          </td>
+                          <td style={{ textAlign: 'center', padding: isSplit ? '4px 2px' : '6px 8px' }}>
+                            <div style={{ display: 'flex', gap: '0.2rem', justifyContent: 'center', alignItems: 'center' }}>
+                              <button className="btn btn-ghost btn-sm" title="PDF" onClick={() => handleDownloadPdf('outward', item.id)} style={{ padding: '2px 4px' }}>
+                                <i className="fas fa-file-pdf" style={{ color: '#ef4444' }}></i>
+                              </button>
+                              <button className="btn btn-ghost btn-sm" title="Edit Transfer" onClick={() => { setEditingTransfer(item); setShowTransferModal(true); }} style={{ padding: '2px 4px' }} disabled={!!isPending}>
+                                <i className="fas fa-edit" style={{ color: isPending ? '#cbd5e1' : '#2563eb' }}></i>
+                              </button>
+                              <button className="btn btn-ghost btn-sm" title="Delete" onClick={() => handleDeleteClick('outward', item.id)} style={{ padding: '2px 4px' }} disabled={!!isPending}>
+                                <i className="fas fa-trash" style={{ color: isPending ? '#cbd5e1' : '#dc2626' }}></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
 
                     return (
                       <tr key={item.id} style={{ backgroundColor: rowBg }}>
@@ -507,7 +579,7 @@ const Stocks = ({ user, showToast }) => {
                     );
                   })}
                   {(!displayedOutwards || displayedOutwards.length === 0) && (
-                    <tr><td colSpan="10" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>{viewMode === 'transfers' ? 'No mill transfer records for selected date.' : 'No outward records for selected date.'}</td></tr>
+                    <tr><td colSpan={viewMode === 'transfers' ? '9' : '10'} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>{viewMode === 'transfers' ? 'No mill transfer records for selected date.' : 'No outward records for selected date.'}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -547,6 +619,18 @@ const Stocks = ({ user, showToast }) => {
           showToast={showToast}
           editItem={editingOutward}
           user={user}
+        />
+      )}
+
+      {showTransferModal && (
+        <MillTransferModal 
+          isOpen={showTransferModal}
+          onClose={() => { setShowTransferModal(false); setEditingTransfer(null); }} 
+          onSaved={handleSaved}
+          editItem={editingTransfer}
+          user={user}
+          showToast={showToast}
+          defaultDate={filterDate || businessDate}
         />
       )}
 

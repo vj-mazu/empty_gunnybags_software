@@ -465,23 +465,24 @@ class OutwardViewSet(viewsets.ModelViewSet):
         from rest_framework.exceptions import ValidationError
         from django.utils import timezone
 
-        party = serializer.validated_data['party']
+        party = serializer.validated_data.get('party')
         variety = serializer.validated_data['variety']
         bags = serializer.validated_data['bags']
-        rate = serializer.validated_data['rate']
+        rate = serializer.validated_data.get('rate', Decimal('0.00'))
         date = serializer.validated_data['date']
         invoice_no = serializer.validated_data.get('invoice_no', '').strip()
 
         five_mins_ago = timezone.now() - datetime.timedelta(minutes=5)
-        duplicate = Outward.objects.filter(
-            party=party,
-            variety=variety,
-            bags=bags,
-            rate=rate,
-            date=date,
-            invoice_no=invoice_no,
-            created_at__gte=five_mins_ago
-        ).exists()
+        dup_filter = {
+            'variety': variety,
+            'bags': bags,
+            'date': date,
+            'invoice_no': invoice_no,
+            'created_at__gte': five_mins_ago,
+        }
+        if party:
+            dup_filter['party'] = party
+        duplicate = Outward.objects.filter(**dup_filter).exists()
 
         if duplicate:
             raise ValidationError("Duplicate entry detected! This invoice/entry was already submitted within the last 5 minutes.")
