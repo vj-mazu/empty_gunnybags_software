@@ -236,8 +236,9 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
 
       const savedUser = (() => { try { return JSON.parse(localStorage.getItem('mother_india_user') || '{}'); } catch(e){ return {}; } })();
       const isOwner = user?.role === 'OWNER' || savedUser?.role === 'OWNER';
+      const isEditing = Boolean(editItem && editItem.id);
 
-      if (editItem) {
+      if (isEditing) {
         if (isOwner) {
           await updateOutward(editItem.id, payload);
           if (showToast) showToast('Outward entry updated successfully!');
@@ -490,7 +491,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
       <div className="modal" style={{ maxWidth: '640px' }}>
         <div className="modal-hdr">
           <div className="modal-title" style={{ color: '#2563eb' }}>
-            <i className="fas fa-minus-circle"></i> {editItem ? 'Edit Outward Entry' : 'New Outward Entry'}
+            <i className={isTransfer ? "fas fa-industry" : "fas fa-minus-circle"}></i> {editItem?.id ? 'Edit Outward Entry' : (isTransfer ? 'New Mill Transfer Entry' : 'New Outward Entry')}
           </div>
           <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
@@ -757,7 +758,7 @@ const OutwardModal = ({ onClose, onSaved, parties: initialParties, varieties: in
               style={{ cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.75 : 1 }}
             >
               <i className={loading ? "fas fa-spinner fa-spin" : "fas fa-paper-plane"} style={{ marginRight: '6px' }}></i> 
-              {loading ? 'Submitting...' : (editItem ? 'Update Outward Entry' : 'Submit Outward Entry')}
+              {loading ? 'Submitting...' : (editItem?.id ? 'Update Outward Entry' : (isTransfer ? 'Submit Mill Transfer' : 'Submit Outward Entry'))}
             </button>
           </div>
         </form>

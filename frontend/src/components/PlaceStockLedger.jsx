@@ -6,6 +6,7 @@ import SearchableSelect from './SearchableSelect';
 const PlaceStockLedger = () => {
   const [places, setPlaces] = useState([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState('');
+  const [showZeroBalance, setShowZeroBalance] = useState(false);
   const [ledgerData, setLedgerData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +51,7 @@ const PlaceStockLedger = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '260px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div style={{ width: '220px' }}>
               <SearchableSelect 
                 options={[{ id: '', name: 'All Mill Transfer Locations' }, ...places]}
@@ -59,6 +60,31 @@ const PlaceStockLedger = () => {
                 placeholder="All Mill Transfer Locations"
               />
             </div>
+
+            {!selectedPlaceId && (
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.4rem', 
+                fontSize: '0.78rem', 
+                fontWeight: 600, 
+                color: '#475569', 
+                cursor: 'pointer',
+                background: '#f8fafc',
+                padding: '0.4rem 0.65rem',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                userSelect: 'none'
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={showZeroBalance} 
+                  onChange={(e) => setShowZeroBalance(e.target.checked)} 
+                />
+                Show 0 Balance Locations
+              </label>
+            )}
+
             <button className="btn btn-ghost" onClick={() => fetchLedger(selectedPlaceId)}>
               <i className="fas fa-sync-alt"></i> Refresh
             </button>
@@ -71,13 +97,37 @@ const PlaceStockLedger = () => {
           <i className="fas fa-spinner fa-spin fa-2x" style={{ color: '#2563eb', marginBottom: '0.75rem' }}></i>
           <div>Loading place inventory balance...</div>
         </div>
-      ) : ledgerData.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-          <i className="fas fa-location-arrow fa-2x" style={{ color: '#cbd5e1', marginBottom: '0.75rem' }}></i>
-          <div>No transfer or sales records found for this location.</div>
-        </div>
-      ) : (
-        ledgerData.map(place => (
+      ) : (() => {
+        const displayedData = ledgerData.filter(place => {
+          if (selectedPlaceId) return true; // Specifically chosen location: always show
+          if (showZeroBalance) return true; // User explicitly requested 0 balance locations
+          return Number(place.remaining_bags) > 0; // Default: show only active locations with stock
+        });
+
+        if (displayedData.length === 0) {
+          return (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+              <i className="fas fa-boxes-packing fa-2x" style={{ color: '#cbd5e1', marginBottom: '0.75rem' }}></i>
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#334155', marginBottom: '0.35rem' }}>
+                No mill transfer locations currently holding remaining stock.
+              </div>
+              <p style={{ fontSize: '0.84rem', color: '#64748b', maxWidth: '480px', margin: '0 auto 1rem' }}>
+                All previously transferred stock has been fully dispatched/sold out.
+              </p>
+              {!selectedPlaceId && !showZeroBalance && (
+                <button 
+                  className="btn btn-ghost" 
+                  onClick={() => setShowZeroBalance(true)}
+                  style={{ border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                >
+                  <i className="fas fa-history"></i> Show All Locations (Including 0 Balance History)
+                </button>
+              )}
+            </div>
+          );
+        }
+
+        return displayedData.map(place => (
           <div key={place.place_id} className="card" style={{ borderLeft: '5px solid #2563eb', padding: '1.25rem' }}>
             {/* Place Title and Metric Summary */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
@@ -175,8 +225,8 @@ const PlaceStockLedger = () => {
               </div>
             </div>
           </div>
-        ))
-      )}
+        ));
+      })()}
     </div>
   );
 };

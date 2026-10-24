@@ -194,7 +194,13 @@ const Stocks = ({ user, showToast }) => {
 
   const isSplit = viewMode === 'split';
   const showInward = isSplit || viewMode === 'inward';
-  const showOutward = isSplit || viewMode === 'outward';
+  const showOutward = isSplit || viewMode === 'outward' || viewMode === 'transfers';
+
+  const salesOutwards = (outwards || []).filter(o => !o.is_transfer);
+  const transferOutwards = (outwards || []).filter(o => o.is_transfer);
+  const displayedOutwards = viewMode === 'transfers' 
+    ? transferOutwards 
+    : (viewMode === 'outward' ? salesOutwards : (outwards || []));
 
   return (
     <div style={{ width: '100%', maxWidth: '100%' }}>
@@ -229,7 +235,16 @@ const Stocks = ({ user, showToast }) => {
               style={{ padding: '0.45rem 0.9rem' }}
             >
               <i className="fas fa-truck-ramp-box" style={{ color: viewMode === 'outward' ? '#dc2626' : '#64748b' }}></i>
-              <span>Outward ({outwards.length})</span>
+              <span>Outward Sales ({salesOutwards.length})</span>
+            </button>
+
+            <button 
+              className={`master-tab-btn ${viewMode === 'transfers' ? 'active' : ''}`}
+              onClick={() => setViewMode('transfers')}
+              style={{ padding: '0.45rem 0.9rem' }}
+            >
+              <i className="fas fa-industry" style={{ color: viewMode === 'transfers' ? '#2563eb' : '#64748b' }}></i>
+              <span>Mill Transfers ({transferOutwards.length})</span>
             </button>
 
             <button 
@@ -287,6 +302,14 @@ const Stocks = ({ user, showToast }) => {
           </button>
           <button className="btn btn-blue" onClick={() => setShowOutwardModal(true)}>
             <i className="fas fa-minus-circle"></i> - Outward
+          </button>
+          <button 
+            className="btn" 
+            onClick={() => { setEditingOutward({ is_transfer: true }); setShowOutwardModal(true); }}
+            style={{ background: '#2563eb', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            title="Transfer bags to an outside mill"
+          >
+            <i className="fas fa-industry"></i> ⇄ Mill Transfer
           </button>
           <button className="btn btn-green" onClick={() => downloadStocksPdf({ date: filterDate || businessDate })} style={{ background: '#059669' }}>
             <i className="fas fa-file-pdf"></i> PDF
@@ -395,10 +418,10 @@ const Stocks = ({ user, showToast }) => {
 
         {/* OUTWARD REGISTER */}
         {showOutward && (
-          <div className="card" style={{ margin: 0, borderTop: '4px solid #ef4444', padding: isSplit ? '0.85rem' : '1.15rem' }}>
+          <div className="card" style={{ margin: 0, borderTop: `4px solid ${viewMode === 'transfers' ? '#2563eb' : '#ef4444'}`, padding: isSplit ? '0.85rem' : '1.15rem' }}>
             <div className="card-hdr" style={{ paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
-              <div className="card-title" style={{ color: '#dc2626', fontSize: isSplit ? '0.88rem' : '0.95rem' }}>
-                <i className="fas fa-truck-ramp-box"></i> Outward Register ({outwards.length})
+              <div className="card-title" style={{ color: viewMode === 'transfers' ? '#2563eb' : '#dc2626', fontSize: isSplit ? '0.88rem' : '0.95rem' }}>
+                <i className={viewMode === 'transfers' ? "fas fa-industry" : "fas fa-truck-ramp-box"}></i> {viewMode === 'transfers' ? 'Mill Transfers Register' : (viewMode === 'outward' ? 'Outward Sales Register' : 'Outward Register')} ({displayedOutwards.length})
               </div>
             </div>
             <div className="tbl-wrap">
@@ -407,7 +430,7 @@ const Stocks = ({ user, showToast }) => {
                   <tr>
                     <th className="outward-th" style={{ textAlign: 'center', width: isSplit ? '24px' : '35px', padding: isSplit ? '4px 2px' : '6px 8px' }}>SL</th>
                     <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Invoice</th>
-                    <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>{isSplit ? 'Party' : 'Customer / Party'}</th>
+                    <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>{viewMode === 'transfers' ? 'Destination Mill' : (isSplit ? 'Party' : 'Customer / Party')}</th>
                     <th className="outward-th" style={{ padding: isSplit ? '4px 4px' : '6px 8px' }}>Variety</th>
                     <th className="outward-th" style={{ textAlign: 'center', padding: isSplit ? '4px 3px' : '6px 8px' }}>Bags</th>
                     <th className="outward-th" style={{ textAlign: 'right', padding: isSplit ? '4px 3px' : '6px 8px' }}>Rate</th>
@@ -418,7 +441,7 @@ const Stocks = ({ user, showToast }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.isArray(outwards) && outwards.map((item, index) => {
+                  {Array.isArray(displayedOutwards) && displayedOutwards.map((item, index) => {
                     const isPending = pendingMap[`OUTWARD_${item.id}`];
                     const rowBg = isPending 
                       ? (isPending.action_type === 'DELETE' ? '#fee2e2' : '#fef08a') 
@@ -442,7 +465,21 @@ const Stocks = ({ user, showToast }) => {
                             </span>
                           )}
                         </td>
-                        <td className="wrap-text" style={{ padding: isSplit ? '4px 4px' : '6px 8px', maxWidth: isSplit ? '85px' : '150px' }}>{renderProposedChange(item, 'party', item.party_name, isPending, parties, varieties)}</td>
+                        <td className="wrap-text" style={{ padding: isSplit ? '4px 4px' : '6px 8px', maxWidth: isSplit ? '95px' : '160px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span>{renderProposedChange(item, 'party', item.party_name, isPending, parties, varieties)}</span>
+                            {item.is_transfer && (
+                              <span style={{ fontSize: '0.66rem', color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '1px 5px', borderRadius: '4px', width: 'fit-content', fontWeight: 700 }}>
+                                <i className="fas fa-industry"></i> To: {item.to_place_name || 'Outside Mill'}
+                              </span>
+                            )}
+                            {item.from_place_name && item.from_place_name !== 'Mother India' && !item.is_transfer && (
+                              <span style={{ fontSize: '0.66rem', color: '#991b1b', background: '#fef2f2', border: '1px solid #fecaca', padding: '1px 5px', borderRadius: '4px', width: 'fit-content', fontWeight: 700 }}>
+                                <i className="fas fa-building"></i> Sold from {item.from_place_name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="wrap-text" style={{ padding: isSplit ? '4px 4px' : '6px 8px', maxWidth: isSplit ? '95px' : '160px' }}>{renderProposedChange(item, 'variety', item.kgs_per_bag ? `${item.variety_name} (${Number(item.kgs_per_bag).toFixed(0)}k)` : item.variety_name, isPending, parties, varieties)}</td>
                         <td style={{ fontWeight: 800, textAlign: 'center', color: '#dc2626', padding: isSplit ? '4px 3px' : '6px 8px' }}>{renderProposedChange(item, 'bags', `-${formatBags(item.bags)}`, isPending, parties, varieties)}</td>
                         <td style={{ textAlign: 'right', fontWeight: 600, padding: isSplit ? '4px 3px' : '6px 8px' }}>{renderProposedChange(item, 'rate', formatINR(item.rate), isPending, parties, varieties)}</td>
@@ -469,8 +506,8 @@ const Stocks = ({ user, showToast }) => {
                       </tr>
                     );
                   })}
-                  {(!outwards || outwards.length === 0) && (
-                    <tr><td colSpan="10" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No outward records for selected date.</td></tr>
+                  {(!displayedOutwards || displayedOutwards.length === 0) && (
+                    <tr><td colSpan="10" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>{viewMode === 'transfers' ? 'No mill transfer records for selected date.' : 'No outward records for selected date.'}</td></tr>
                   )}
                 </tbody>
               </table>
