@@ -1,10 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getVarieties, getPlaces, createOutward, updateOutward, createApprovalRequest } from '../api';
+import SearchableSelect from './SearchableSelect';
+import { formatBags } from '../utils/formatters';
 
-const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = null, showToast = null, defaultDate = '' }) => {
-  if (!isOpen) return null;
+const MillTransferModal = ({ 
+  isOpen, 
+  onClose, 
+  onSaved, 
+  editItem = null, 
+  user = null, 
+  showToast = null, 
+  defaultDate = '',
+  varieties: initialVarieties = null
+}) => {
+  if (isOpen === false) return null;
 
-  const [varieties, setVarieties] = useState([]);
+  const [varieties, setVarieties] = useState(initialVarieties || []);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -13,20 +24,22 @@ const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = n
   const [invoiceNo, setInvoiceNo] = useState('');
   const [varietyId, setVarietyId] = useState('');
   const [bags, setBags] = useState('');
-  const [fromPlaceId, setFromPlaceId] = useState(''); // '' means Mother India Mill
+  const [fromPlaceId, setFromPlaceId] = useState(''); // '' = Mother India Main Mill
   const [toPlaceId, setToPlaceId] = useState('');
   const [remarks, setRemarks] = useState('');
 
   useEffect(() => {
-    Promise.all([getVarieties(), getPlaces()]).then(([varsRes, placesRes]) => {
-      const vList = varsRes.results || varsRes.data || varsRes || [];
-      const pList = placesRes.results || placesRes.data || placesRes || [];
-      setVarieties(Array.isArray(vList) ? vList : []);
+    if (!initialVarieties || initialVarieties.length === 0) {
+      getVarieties().then(res => {
+        const vList = res.results || res.data || res || [];
+        setVarieties(Array.isArray(vList) ? vList : []);
+      }).catch(console.error);
+    }
+    getPlaces().then(res => {
+      const pList = res.results || res.data || res || [];
       setPlaces(Array.isArray(pList) ? pList : []);
-    }).catch(err => {
-      console.error('Failed to load transfer metadata', err);
-    });
-  }, []);
+    }).catch(console.error);
+  }, [initialVarieties]);
 
   useEffect(() => {
     if (editItem && editItem.id) {
@@ -135,58 +148,42 @@ const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = n
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content" style={{ maxWidth: '580px', width: '92%' }}>
-        <div className="modal-header" style={{ borderBottom: '2px solid #2563eb', paddingBottom: '0.85rem' }}>
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1e40af', margin: 0, fontSize: '1.2rem' }}>
-            <i className="fas fa-industry"></i>
-            {editItem?.id ? 'Edit Mill Transfer' : 'New Mill Transfer Entry'}
-          </h2>
-          <button type="button" className="close-btn" onClick={onClose} disabled={loading}>&times;</button>
+    <div className="modal-overlay">
+      <div className="modal" style={{ maxWidth: '640px' }}>
+        <div className="modal-hdr">
+          <div className="modal-title" style={{ color: '#2563eb' }}>
+            <i className="fas fa-industry"></i> {editItem?.id ? 'Edit Mill Transfer' : 'New Mill Transfer Entry'}
+          </div>
+          <button className="modal-close" onClick={onClose} disabled={loading}>&times;</button>
         </div>
 
         {error && (
-          <div className="alert-error" style={{ margin: '0.85rem 0', padding: '0.65rem 1rem', borderRadius: '6px' }}>
-            <i className="fas fa-triangle-exclamation" style={{ marginRight: '6px' }}></i>
-            {error}
+          <div className="alert-item alert-low" style={{ marginBottom: '1rem' }}>
+            <i className="fas fa-exclamation-triangle"></i> {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-          {/* Transfer Context Banner */}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.15rem' }}>
-            <div style={{ fontSize: '0.78rem', color: '#1e40af', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <i className="fas fa-info-circle"></i> Inter-Mill Stock Transfer
+        {/* Transfer context notice */}
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.65rem 0.95rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <i className="fas fa-truck-moving" style={{ color: '#2563eb', fontSize: '1.1rem' }}></i>
+          <div>
+            <div style={{ fontSize: '0.78rem', color: '#1e40af', fontWeight: 700 }}>
+              Inter-Mill Transfer
             </div>
-            <div style={{ fontSize: '0.74rem', color: '#3b82f6', marginTop: '2px' }}>
-              Transfers move physical gunny bags between mill locations. No customer sale or rates required.
+            <div style={{ fontSize: '0.72rem', color: '#3b82f6' }}>
+              Transfer stock between Mother India Mill and outside mill locations without sales pricing or customer billing.
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-            {/* Date */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-calendar-day" style={{ color: '#2563eb', marginRight: '4px' }}></i> Date *
-              </label>
-              <input
-                type="date"
-                className="form-control"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            {/* Bill / Transfer Number */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-file-invoice" style={{ color: '#2563eb', marginRight: '4px' }}></i> Bill / Transfer No *
-              </label>
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid" style={{ marginBottom: '1rem' }}>
+            {/* Bill / Transfer No */}
+            <div className="form-group">
+              <label>Bill / Transfer No *</label>
               <input
                 type="text"
-                className="form-control"
+                className="input"
                 placeholder="e.g. TRF-1024"
                 value={invoiceNo}
                 onChange={(e) => setInvoiceNo(e.target.value)}
@@ -194,101 +191,91 @@ const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = n
                 disabled={loading}
               />
             </div>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-            {/* Origin Mill (From) */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-warehouse" style={{ color: '#059669', marginRight: '4px' }}></i> From Mill (Origin) *
-              </label>
-              <select
-                className="form-control"
-                value={fromPlaceId}
-                onChange={(e) => setFromPlaceId(e.target.value)}
+            {/* Date */}
+            <div className="form-group">
+              <label>Date *</label>
+              <input
+                type="date"
+                className="input"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
                 disabled={loading}
-              >
-                <option value="">Mother India (Our Main Mill)</option>
-                {places.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+              />
+            </div>
+
+            {/* Origin Mill (From) */}
+            <div className="form-group">
+              <label>From Mill (Origin) *</label>
+              <SearchableSelect
+                options={[
+                  { id: '', name: 'Mother India (Our Main Mill)' },
+                  ...places.map(p => ({ id: p.id, name: p.name }))
+                ]}
+                value={fromPlaceId}
+                onChange={setFromPlaceId}
+                placeholder="Select Origin Mill..."
+              />
             </div>
 
             {/* Destination Mill (To) */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-truck-moving" style={{ color: '#2563eb', marginRight: '4px' }}></i> To Mill (Destination) *
-              </label>
-              <select
-                className="form-control"
+            <div className="form-group">
+              <label>To Mill (Destination) *</label>
+              <SearchableSelect
+                options={places
+                  .filter(p => String(p.id) !== String(fromPlaceId))
+                  .map(p => ({ id: p.id, name: p.name }))}
                 value={toPlaceId}
-                onChange={(e) => setToPlaceId(e.target.value)}
-                required
-                disabled={loading}
-              >
-                <option value="">-- Select Destination Mill --</option>
-                {places.filter(p => String(p.id) !== String(fromPlaceId)).map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                onChange={setToPlaceId}
+                placeholder="Select Destination Mill..."
+                required={true}
+              />
             </div>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             {/* Variety */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-wheat-awn" style={{ color: '#2563eb', marginRight: '4px' }}></i> Variety *
-              </label>
-              <select
-                className="form-control"
+            <div className="form-group">
+              <label>Variety *</label>
+              <SearchableSelect
+                options={varieties.map(v => ({
+                  id: v.id,
+                  name: `${v.name} (${Number(v.kgs_per_bag || 0).toFixed(0)}k) [Stock: ${formatBags(v.current_stock_bags || 0)}]`
+                }))}
                 value={varietyId}
-                onChange={(e) => setVarietyId(e.target.value)}
-                required
-                disabled={loading}
-              >
-                <option value="">-- Select Variety --</option>
-                {varieties.map(v => (
-                  <option key={v.id} value={v.id}>
-                    {v.name} ({v.kgs_per_bag}kg) [Stock: {v.current_stock_bags || 0}]
-                  </option>
-                ))}
-              </select>
+                onChange={setVarietyId}
+                placeholder="Search & Select Variety..."
+                required={true}
+              />
+              {selectedVariety && (
+                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                  Available stock: <strong style={{ color: availableBags > 0 ? '#15803d' : '#dc2626' }}>{formatBags(availableBags)} bags</strong>
+                </div>
+              )}
             </div>
 
             {/* Bags */}
-            <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                <i className="fas fa-box" style={{ color: '#2563eb', marginRight: '4px' }}></i> Bags to Transfer *
-              </label>
+            <div className="form-group">
+              <label>Bags to Transfer *</label>
               <input
                 type="number"
                 min="1"
-                className="form-control"
+                className="input"
                 placeholder="Enter bags count"
                 value={bags}
                 onChange={(e) => setBags(e.target.value)}
                 required
                 disabled={loading}
               />
-              {selectedVariety && (
-                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
-                  Total stock: <strong style={{ color: availableBags > 0 ? '#059669' : '#dc2626' }}>{availableBags.toLocaleString()} bags</strong>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Remarks */}
+          {/* Remarks / Vehicle details */}
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-            <label style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-              <i className="fas fa-comment-dots" style={{ color: '#64748b', marginRight: '4px' }}></i> Remarks / Vehicle Details
-            </label>
+            <label>Remarks / Vehicle & Transport Details</label>
             <input
               type="text"
-              className="form-control"
-              placeholder="e.g. Vehicle KA-36-A-1234, Driver Ramesh, Notes"
+              className="input"
+              placeholder="e.g. Vehicle KA-36-A-1234, Driver Ramesh, Transport challan #45"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               disabled={loading}
@@ -296,7 +283,7 @@ const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = n
           </div>
 
           {/* Modal Actions */}
-          <div className="modal-actions" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <div className="modal-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading}>
               Cancel
             </button>
@@ -304,7 +291,7 @@ const MillTransferModal = ({ isOpen, onClose, onSaved, editItem = null, user = n
               type="submit"
               className="btn btn-blue"
               disabled={loading}
-              style={{ minWidth: '150px', background: '#2563eb', cursor: loading ? 'not-allowed' : 'pointer' }}
+              style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               <i className={loading ? "fas fa-spinner fa-spin" : "fas fa-paper-plane"} style={{ marginRight: '6px' }}></i>
               {loading ? 'Submitting...' : (editItem?.id ? 'Update Transfer' : 'Submit Mill Transfer')}

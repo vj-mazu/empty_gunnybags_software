@@ -631,6 +631,7 @@ const Stocks = ({ user, showToast }) => {
           user={user}
           showToast={showToast}
           defaultDate={filterDate || businessDate}
+          varieties={varieties}
         />
       )}
 
