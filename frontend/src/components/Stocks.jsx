@@ -487,8 +487,18 @@ const Stocks = ({ user, showToast }) => {
                             {formatDate(item.date)}
                           </td>
                           <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', fontWeight: 600, color: '#047857' }}>
-                            <i className="fas fa-warehouse" style={{ marginRight: '4px' }}></i>
-                            {item.from_place_name || 'Mother India'}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span>
+                                <i className="fas fa-warehouse" style={{ marginRight: '4px' }}></i>
+                                {item.from_place_name || 'Mother India'}
+                              </span>
+                              {(item.floor_name || (item.floor_allocations && item.floor_allocations.length > 0)) && (
+                                <span style={{ fontSize: '0.66rem', color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '1px 5px', borderRadius: '4px', width: 'fit-content', fontWeight: 700 }}>
+                                  <i className="fas fa-layer-group" style={{ marginRight: '3px' }}></i>
+                                  {item.floor_name || (item.floor_allocations.length > 1 ? `${item.floor_allocations.length} Floors` : (item.floor_allocations[0]?.floor_name || 'Floor'))}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td style={{ padding: isSplit ? '4px 4px' : '6px 8px', fontWeight: 700, color: '#1d4ed8' }}>
                             <i className="fas fa-truck-moving" style={{ marginRight: '4px' }}></i>
